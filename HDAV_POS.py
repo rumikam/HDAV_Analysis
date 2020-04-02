@@ -1,8 +1,8 @@
-#get the CDS from the ensemble output file for each HDAV, and
+#gets the CDS from the ensemble output file for each HDAV, and then
 #gets the position in the human transcript
 #updated: March 19th, 2020
 filename = "VEP_Pathogenic.txt"
-ensEMBL_files = "aligned_files.txt"
+ensEMBL_files = "aligned_files.txt" #list of all the ensEMBL alignments files
 new_pos = {}
 
 output = open("output_Pathogenic.txt", "w")
@@ -11,13 +11,14 @@ alignment_length_error = open("output_alignment_length_errorP.txt", "w")
 NotInEnsEMBL = open("output_NotInEnsEMBL_P.txt", "w")
 NotCanonicalSNV = open("output_NotCanonicalSNV_P.txt", "w")
 
-
+#checks to filter for only Canonical variants 
 def isCanonicalSNV(canonical, CDS_pos):
 	if((canonical == "YES") and ("-" not in CDS_pos)):
 		return True
 	else:
 		return False
-
+	
+#checks the ensEMBL alignment file to map the ClinVar variant to ensEMBL genes obtained
 def isInEnsEMBL(Gene):
 	with open(ensEMBL_files, 'r') as y: #EnsEMBL_files is a txt with all the EnsEMBL files
 			for ensEMBL_geneid in y:
@@ -25,26 +26,27 @@ def isInEnsEMBL(Gene):
 					return ensEMBL_geneid
 
 def getNewPos(file, CDS_pos):
-	with open("/home/rumika.mascarenhas/PRANK_OUT/Processed_Prank/" + file.strip("\n"), 'r') as z:
+	with open("/home/rumika.mascarenhas/PRANK_OUT/Processed_Prank/" + file.strip("\n"), 'r') as z: #opens each alignment file based on the gene the HDAV is in
 		next(z)
 		for fasta in z:
-		        #print(fasta)
-			ClinVar_CDS_pos = int(CDS_pos)
-			count = 0 #increments when a gap occurs
-			if("Homo_sapiens" in fasta):
+		       	ClinVar_CDS_pos = int(CDS_pos)
+            		count_gap = 0
+            		count_NT = 0
+            		if("Homo_sapiens" in fasta):
 				align = str(next(z))
 				align = list(align)
-                                print(align)
+				#print(align)
 				if(len(align) >= ClinVar_CDS_pos):
-					for i in range(0,(ClinVar_CDS_pos-1)):
-						if(align[i] == "-" ):
-							count += 1
-				else:
-					alignment_length_error.write(location + "\t" + gene + "\t" + transcript + "\n")
-			new_position = str(ClinVar_CDS_pos + count)
-			print(count)
-			print(new_position)
-			return new_position
+				    for i in range(0,(len(align))):
+					if(align[i] == "-" ):
+					    count_gap += 1
+					else:
+					    count_NT += 1
+					    if count_NT == ClinVar_CDS_pos:
+						new_pos = str(ClinVar_CDS_pos + count_gap)
+			#print(ClinVar_CDS_pos)
+			#print(new_pos)
+			return new_pos
 
 with open(filename, 'r') as x:
 	next(x)
